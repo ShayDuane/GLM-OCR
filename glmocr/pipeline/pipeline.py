@@ -314,11 +314,13 @@ class Pipeline:
                     state.page_queue.put(("image", img_idx, page))
                     unit_indices_list.append(unit_idx)
                     img_idx += 1
-                state.num_images_loaded[0] = img_idx
-                state.unit_indices_holder[0] = unit_indices_list
+                    state.num_images_loaded[0] = img_idx
+                    state.unit_indices_holder[0] = list(unit_indices_list)
                 state.page_queue.put(("done", None, None))
             except Exception as e:
                 logger.exception("Data loading thread error: %s", e)
+                state.num_images_loaded[0] = img_idx
+                state.unit_indices_holder[0] = list(unit_indices_list)
                 with state.exception_lock:
                     state.exceptions.append(("DataLoadingThread", e))
                 state.page_queue.put(("error", None, None))

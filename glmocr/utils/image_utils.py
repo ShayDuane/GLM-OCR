@@ -318,6 +318,7 @@ def pdf_to_images_pil(
         )
     import pypdfium2 as pdfium
 
+    pdf = None
     try:
         pdf = pdfium.PdfDocument(pdf_path)
         page_count = len(pdf)
@@ -337,7 +338,8 @@ def pdf_to_images_pil(
                 page.close()
         return images
     finally:
-        pdf.close()
+        if pdf is not None:
+            pdf.close()
 
 
 def pdf_to_images_pil_iter(
@@ -368,6 +370,7 @@ def pdf_to_images_pil_iter(
         )
     import pypdfium2 as pdfium
 
+    pdf = None
     try:
         pdf = pdfium.PdfDocument(pdf_path)
         page_count = len(pdf)
@@ -385,4 +388,5 @@ def pdf_to_images_pil_iter(
             finally:
                 page.close()
     finally:
-        pdf.close()
+        if pdf is not None:
+            pdf.close()

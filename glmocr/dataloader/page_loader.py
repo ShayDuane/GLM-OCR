@@ -17,7 +17,7 @@ import os
 import base64
 import time
 from io import BytesIO
-from typing import TYPE_CHECKING, Dict, Any, List, Tuple, Union
+from typing import TYPE_CHECKING, Dict, Any, List, Optional, Tuple, Union
 
 from PIL import Image
 
@@ -142,9 +142,7 @@ class PageLoader:
             unit_indices.extend([unit_idx] * len(pages))
         return all_pages, unit_indices
 
-    def iter_pages_with_unit_indices(
-        self, sources: Union[str, List[str]]
-    ):
+    def iter_pages_with_unit_indices(self, sources: Union[str, List[str]]):
         """Stream pages one at a time with unit index per page.
 
         Yields (page, unit_idx) so the pipeline can enqueue each page as soon
@@ -174,20 +172,25 @@ class PageLoader:
         else:
             yield self._load_image(source)
 
+    def _compute_end_page(self) -> Optional[int]:
+        """Parse pdf_max_pages into 0-based inclusive end page index, or None for last page."""
+        if self.pdf_max_pages is None:
+            return None
+        try:
+            mp = int(self.pdf_max_pages)
+            if mp > 0:
+                return mp - 1  # 0-based inclusive
+        except Exception:
+            pass
+        return None
+
     def _iter_pdf(self, file_path: str):
         """Yield PDF pages one at a time (streaming)."""
         if not PYPDFIUM2_AVAILABLE:
             raise RuntimeError(
                 "PDF support requires pypdfium2. Install: pip install pypdfium2"
             )
-        end_page = None
-        if self.pdf_max_pages is not None:
-            try:
-                mp = int(self.pdf_max_pages)
-                if mp > 0:
-                    end_page = mp - 1  # 0-based inclusive
-            except Exception:
-                pass
+        end_page = self._compute_end_page()
         for image in pdf_to_images_pil_iter(
             file_path,
             dpi=self.pdf_dpi,
@@ -243,14 +246,7 @@ class PageLoader:
                 "PDF support requires pypdfium2. Install: pip install pypdfium2"
             )
         t0 = time.perf_counter()
-        end_page = None
-        if self.pdf_max_pages is not None:
-            try:
-                mp = int(self.pdf_max_pages)
-                if mp > 0:
-                    end_page = mp - 1  # 0-based inclusive
-            except Exception:
-                pass
+        end_page = self._compute_end_page()
         pages = pdf_to_images_pil(
             file_path,
             dpi=self.pdf_dpi,
